@@ -120,7 +120,7 @@ function getSecond(first, second) {
 		} if (distance < 3) {
 		    var extra_text = "</br>You're pretty closely connected!"
 		} else if (distance > 50) {
-		    var extra_text = "</br>There are too many people between you to display.";
+		    var extra_text = "That's too many to display.";
 		} else {
 		    extra_text = "";
 		}
