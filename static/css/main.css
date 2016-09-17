@@ -116,7 +116,8 @@ a:hover {
     display: block;
     box-sizing: border-box;
     height: 50px;
-    width: 500px;
+    width: 100%;
+    max-width: 500px;
     margin: auto;
     margin-top: 15px;
     border-radius: 3px;
@@ -126,6 +127,11 @@ a:hover {
     padding-left: 10px;
     color: #212121;
     background-color: #EEEEEE;
+}
+
+span.twitter-typeahead {
+    max-width: 500px;
+    width: 100%;
 }
 
 #error {
@@ -224,5 +230,3 @@ a:hover {
 .tt-suggestion p {
     margin: 0;
 }
-
-

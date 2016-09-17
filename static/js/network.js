@@ -7,9 +7,19 @@ var names,
 
 var graph,
     data,
-    mouseover = false;
+    hover = false;
 
 $(document).ready(function() {
+
+    $('#tooltip').mouseenter(function() {
+	hover = true;
+    });
+
+    $('#tooltip').mouseleave(function() {
+	hover = false;
+	hideToolTip();
+    });
+
     graph  = d3_init();
 
     d3.csv('static/js/details.csv', function(csv) {
@@ -40,10 +50,9 @@ $(document).ready(function() {
 	    $('#connection-text').text('');
 	    e.preventDefault();
 
+	    names = []
 	    names = [$(this).find('#name-1').val(), $(this).find('#name-2').val()];
 	    results = [];
-
-
 
 	    for (var i = 0; i < names.length; i++) {
 		if (names[i][0] == '@') {
@@ -65,6 +74,7 @@ $(document).ready(function() {
 	    }
 
 
+	    console.log(results);
 
 	    if (results[0] === undefined) {
 		getFirst(results[1]);
@@ -105,7 +115,9 @@ function getSecond(first, second) {
 		    var num_logic = 'are <span class="pink">' + distance + '</span> people';
 		}
 
-		if (distance < 3) {
+		if (distance == 0) {
+		    var extra_text = ""
+		} if (distance < 3) {
 		    var extra_text = "</br>You're pretty closely connected!"
 		} else if (distance > 50) {
 		    var extra_text = "</br>There are too many people between you to display.";
@@ -113,11 +125,17 @@ function getSecond(first, second) {
 		    extra_text = "";
 		}
 
-		$('#connections-info').html('There ' + num_logic + ' between <span class="purple">' + names[0] + '</span> and <span class="purple">' + names[1] + '.</span>' + extra_text);
+		if (distance == 0) {
+		    var final_text = "You're directly connected!";
+		} else {
+		    var final_text = 'There ' + num_logic + ' between <span class="purple">' + names[0] + '</span> and <span class="purple">' + names[1] + '.</span>' + extra_text
+		}
+		$('#connections-info').html(final_text);
 		graph(result);
 	    }
 	},
 	error: function(request, status, error) {
+	    console.log(request);
 	}
     })
 }
@@ -146,6 +164,7 @@ function getFirst(id) {
 	    }
 	},
 	error: function(request, status, error) {
+	    console.log(request);
 	}
     })
 }
@@ -212,7 +231,6 @@ function d3_init() {
 	    links.push(data.edges[i]);
 	}
 
-
 	link = link.data(force.links(), function(d) {return d.source + "-" + d.target; });
 	link.enter().insert('line', '.node').attr('class', 'link').style('stroke', '#aaa');
 	link.exit().remove();
@@ -222,33 +240,44 @@ function d3_init() {
 	    .append('circle')
 	    .attr('class', function(d) { return "node " + d.id; })
 	    .attr('r', radius)
-	    .style('fill', function(d) {
-		if (d['id'] == results[0] || d['id'] == results[1]) {
-		    return '#ed82af';
-		} else {
-		    return '#404D94';
-		}
-	    })
 	    .style('stroke', 'white')
 	    .on('mouseover', function(d) {
+		hover = true;
 		showToolTip(d);
 	    })
 	    .on('mouseout', function(d) {
+		hover = false;
 		hideToolTip();
 	    });
 
 	node.exit().remove();
 
+	node.each(function(d) {
+	    d3.select(this).style('fill', function(d) {
+		if (d['id'] == results[0] || d['id'] == results[1]) {
+		    return '#ed82af';
+		} else {
+		    return '#404D94';
+		}
+	    });
+	});
 
 	force.start();
 
     }
 
     return update;
+
 }
 
+
 function hideToolTip() {
-    $('#tooltip').css('display', 'none').css('opacity', 0);
+    setTimeout(function() {
+	if (!hover) {
+	    $('#tooltip').css('display', 'none').css('opacity', 0);
+	}
+    }, 200);
+
 }
 
 function showToolTip(d) {
@@ -259,12 +288,11 @@ function showToolTip(d) {
 	    return data[i]['id'] == id;
 	});
 
-
     if (details[0]) {
 	$('#tooltip img').css('display', 'block');
 	$('#tooltip img').attr('src', details[0]['image']);
 	$('#tooltip-name h4').text(details[0]['name']);
-	$('#tooltip-name a').text(details[0]['username']);
+	$('#tooltip-name a').text('@' + details[0]['username']).attr('href', 'https://www.twitter.com/' + details[0]['username']).attr('target', '_blank');
 	$('#bio').text(details[0]['bio']);
     } else {
 	$('#tooltip img').css('display', 'none');
