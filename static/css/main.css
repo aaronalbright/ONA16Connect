@@ -129,6 +129,13 @@ a:hover {
     background-color: #EEEEEE;
 }
 
+.credit {
+    color: #ababab;
+    margin: auto;
+    margin-top: 15px;
+    font-size: 12px;
+}
+
 span.twitter-typeahead {
     max-width: 500px;
     width: 100%;
