@@ -1,6 +1,8 @@
-var first,
-    second,
-    names,
+/**
+ Be aware: This code was written in less than 48 hours, most of it at about 2 in the morning.
+**/
+
+var names,
     results;
 
 var graph,
@@ -9,22 +11,22 @@ var graph,
 
 $(document).ready(function() {
     graph  = d3_init();
-    
+
     d3.csv('static/js/details.csv', function(csv) {
-	console.log(csv);
 	data = csv;
 	searchInit();
     });
 
+
     function searchInit() {
 	var search_data = data.map(function(d){return '@' + d['username']}).concat(data.map(function(d){return d['name']}));
-	
+
 	var engine = new Bloodhound({
 	    local: search_data,
 	    queryTokenizer: Bloodhound.tokenizers.whitespace,
 	    datumTokenizer: Bloodhound.tokenizers.whitespace
 	});
-	
+
 	$('#name-1, #name-2').typeahead({
 	    minLength: 2,
 	    highlight: true
@@ -32,26 +34,26 @@ $(document).ready(function() {
 	    name: 'my-dataset',
 	    source: engine
 	});
-	
+
 	$('.twitter-submit').submit(function(e) {
 	    $('#error').text('');
 	    $('#connection-text').text('');
 	    e.preventDefault();
-	    
+
 	    names = [$(this).find('#name-1').val(), $(this).find('#name-2').val()];
 	    results = [];
 
-	    console.log(names);
+
 
 	    for (var i = 0; i < names.length; i++) {
 		if (names[i][0] == '@') {
 		    for (var j = 0; j < data.length; j++) {
 			if (names[i].toLowerCase() === '@' + data[j]['username'].toLowerCase()) {
-			    
+
 			    results[i] = data[j]['id'];
 			    break;
 			}
-		    } 
+		    }
 		} else {
 		    for (var j = 0; j < data.length; j++) {
 			if (names[i].toLowerCase() === data[j]['name'].toLowerCase()) {
@@ -62,10 +64,7 @@ $(document).ready(function() {
 		}
 	    }
 
-	    first = results[0];
-	    second = results[1];
 
-	    console.log(results);
 
 	    if (results[0] === undefined) {
 		getFirst(results[1]);
@@ -79,6 +78,7 @@ $(document).ready(function() {
 });
 
 function getSecond(first, second) {
+    $('#connections-info').text('');
     $('#network').append('<h2 id="loading">Loading. This could take a minute.</h2>');
     $.ajax({
 	type: 'GET',
@@ -90,29 +90,40 @@ function getSecond(first, second) {
 	contentType: 'application/json',
 	datatype: 'json',
 	success: function(result) {
-
 	    $('#loading').remove();
 
 	    if (!result) {
 		$('#error').text("The app encountered an error. Try again with different names!");
 	    } else {
 		var distance = parseInt(result['length']) - 2;
+
 		if (distance == 1) {
 		    var num_logic = 'is <span class="pink">' + distance + '</span> person';
+		} else if (distance == 70) {
+		     var num_logic = 'are at least <span class="pink">' + distance + '</span> people';
 		} else {
 		    var num_logic = 'are <span class="pink">' + distance + '</span> people';
 		}
-		$('#connections-info').html('There ' + num_logic + ' between <span class="purple">' + names[0] + '</span> and <span class="purple">' + names[1] + '.</span>');
+
+		if (distance < 3) {
+		    var extra_text = "</br>You're pretty closely connected!"
+		} else if (distance > 50) {
+		    var extra_text = "</br>There are too many people between you to display.";
+		} else {
+		    extra_text = "";
+		}
+
+		$('#connections-info').html('There ' + num_logic + ' between <span class="purple">' + names[0] + '</span> and <span class="purple">' + names[1] + '.</span>' + extra_text);
 		graph(result);
 	    }
 	},
 	error: function(request, status, error) {
-	    console.log(request);
 	}
     })
 }
 
 function getFirst(id) {
+    $('#connections-info').text('');
     $('#network').append('<h2 id="loading">Loading. This could take a minute.</h2>');
     $.ajax({
 	type: 'GET',
@@ -121,9 +132,8 @@ function getFirst(id) {
 	contentType: 'application/json',
 	datatype: 'json',
 	success: function(result) {
-
 	    $('#loading').remove();
-	    
+
 	    if (typeof result === 'string') {
 		result = undefined;
 		$('#error').text(result);
@@ -131,19 +141,17 @@ function getFirst(id) {
 		$('#particles').fadeTo('slow', 0, function() {
 		    $(this).css('display', 'none');
 		});
-		
+
 		graph(result);
 	    }
 	},
 	error: function(request, status, error) {
-	    console.log(request);
 	}
     })
 }
 
 function d3_init() {
 
-    console.log('init');
     var width = d3.select('#network').node().getBoundingClientRect().width,
 	height = d3.select('#network').node().getBoundingClientRect().height,
 	radius = 20;
@@ -159,7 +167,7 @@ function d3_init() {
 	.charge(-300)
     	.size([width, height])
 	.on('tick', tick);
-    
+
     var svg = d3.select('#network').append('svg')
 	.attr('height', height)
 	.attr('width', width);
@@ -179,7 +187,7 @@ function d3_init() {
 	    .attr("x2", function(d) { return d.target.x; })
 	    .attr("y2", function(d) { return d.target.y; });
     }
- 
+
 
     // function tick() {
     // 	link.attr("x1", function(d) { return d.source.x; })
@@ -195,7 +203,7 @@ function d3_init() {
 
 	links.length = 0;
 	nodes.length = 0;
-	
+
 	for (var i = 0; i < data.nodes.length; i++) {
 	    nodes.push(data.nodes[i]);
 	}
@@ -204,10 +212,8 @@ function d3_init() {
 	    links.push(data.edges[i]);
 	}
 
-	console.log(links);
 
 	link = link.data(force.links(), function(d) {return d.source + "-" + d.target; });
-	console.log(link);
 	link.enter().insert('line', '.node').attr('class', 'link').style('stroke', '#aaa');
 	link.exit().remove();
 
@@ -217,7 +223,7 @@ function d3_init() {
 	    .attr('class', function(d) { return "node " + d.id; })
 	    .attr('r', radius)
 	    .style('fill', function(d) {
-		if (d['id'] == first || d['id'] == second) {
+		if (d['id'] == results[0] || d['id'] == results[1]) {
 		    return '#ed82af';
 		} else {
 		    return '#404D94';
@@ -230,11 +236,12 @@ function d3_init() {
 	    .on('mouseout', function(d) {
 		hideToolTip();
 	    });
+
 	node.exit().remove();
 
-	
+
 	force.start();
-	
+
     }
 
     return update;
@@ -252,10 +259,9 @@ function showToolTip(d) {
 	    return data[i]['id'] == id;
 	});
 
-    console.log(details['0']);
 
     if (details[0]) {
-		$('#tooltip img').css('display', 'block');
+	$('#tooltip img').css('display', 'block');
 	$('#tooltip img').attr('src', details[0]['image']);
 	$('#tooltip-name h4').text(details[0]['name']);
 	$('#tooltip-name a').text(details[0]['username']);
@@ -267,14 +273,12 @@ function showToolTip(d) {
 	$('#bio').text("Oh no! Something went wrong and we can't find information for that user. Sorry about that!");
     }
 
-    
+
     $('#tooltip').css('display', 'inline-block')
 	.css('left', function() {
-	    console.log((x - $(this)[0].getBoundingClientRect().width / 2));
 	    return Math.max((x - $(this)[0].getBoundingClientRect().width / 2), 0);
 	})
 	.css('top', function() {
 	    return y - 15 - $(this)[0].getBoundingClientRect().height;
 	}).fadeTo('fast', 1);
-	
 }
